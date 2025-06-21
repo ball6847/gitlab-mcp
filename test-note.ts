@@ -6,9 +6,11 @@
 
 import fetch from "node-fetch";
 
+import { getApiUrl, getApiToken } from './config.js';
+
 // GitLab API configuration (replace with actual values when testing)
-const GITLAB_API_URL = process.env.GITLAB_API_URL || "https://gitlab.com";
-const GITLAB_PERSONAL_ACCESS_TOKEN = process.env.GITLAB_TOKEN || "";
+const GITLAB_API_URL = getApiUrl() || "https://gitlab.com";
+const GITLAB_PERSONAL_ACCESS_TOKEN = getApiToken() || "";
 const PROJECT_ID = process.env.PROJECT_ID || "your/project";
 const ISSUE_IID = Number(process.env.ISSUE_IID || "1");
 

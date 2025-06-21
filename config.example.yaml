@@ -1,3 +1,8 @@
+# GitLab API Configuration (optional, can also be set via environment variables)
+# api:
+#   url: https://gitlab.com
+#   token: your-gitlab-personal-access-token-here
+
 # Example configuration file for gitlab-mcp feature flags
 #
 # USAGE:

@@ -3,7 +3,7 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
-import { featureFlags, configPath, initFeatureFlags, hasLegacyFlags, setFeatureFlags } from './feature-flags.js';
+import { gitLabConfig, configPath, initGitLabConfig, hasLegacyFlags, setGitLabConfig, getApiUrl, getApiToken } from './config.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import nodeFetch from "node-fetch";
 import fetchCookie from "fetch-cookie";
@@ -212,7 +212,7 @@ const server = new Server(
   }
 );
 
-const GITLAB_PERSONAL_ACCESS_TOKEN = process.env.GITLAB_PERSONAL_ACCESS_TOKEN;
+const GITLAB_PERSONAL_ACCESS_TOKEN = getApiToken();
 const GITLAB_AUTH_COOKIE_PATH = process.env.GITLAB_AUTH_COOKIE_PATH;
 const IS_OLD = process.env.GITLAB_IS_OLD === "true";
 const GITLAB_READ_ONLY_MODE = process.env.GITLAB_READ_ONLY_MODE === "true";
@@ -812,7 +812,7 @@ function normalizeGitLabApiUrl(url?: string): string {
 }
 
 // Use the normalizeGitLabApiUrl function to handle various URL formats
-const GITLAB_API_URL = normalizeGitLabApiUrl(process.env.GITLAB_API_URL || "");
+const GITLAB_API_URL = normalizeGitLabApiUrl(getApiUrl() || "");
 const GITLAB_PROJECT_ID = process.env.GITLAB_PROJECT_ID;
 
 if (!GITLAB_PERSONAL_ACCESS_TOKEN) {
@@ -3360,17 +3360,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   let tools = [...allTools]; // Create a copy of allTools
 
   // Check if we have a valid configuration from file
-  if (configPath && featureFlags) {
+  if (configPath && gitLabConfig) {
     // Config file exists and is valid - apply its rules
-    const hasEnabled = featureFlags?.enabled && Array.isArray(featureFlags.enabled) && featureFlags.enabled.length > 0;
-    const hasDisabled = featureFlags?.disabled && Array.isArray(featureFlags.disabled) && featureFlags.disabled.length > 0;
+    const hasEnabled = gitLabConfig?.enabled && Array.isArray(gitLabConfig.enabled) && gitLabConfig.enabled.length > 0;
+    const hasDisabled = gitLabConfig?.disabled && Array.isArray(gitLabConfig.disabled) && gitLabConfig.disabled.length > 0;
 
     if (hasEnabled) {
       // Only include tools that are explicitly enabled
-      tools = tools.filter(tool => featureFlags!.enabled!.includes(tool.name));
+      tools = tools.filter(tool => gitLabConfig!.enabled!.includes(tool.name));
     } else if (hasDisabled) {
       // Exclude tools that are explicitly disabled
-      tools = tools.filter(tool => !featureFlags!.disabled!.includes(tool.name));
+      tools = tools.filter(tool => !gitLabConfig!.disabled!.includes(tool.name));
     }
   } else {
     // No config file or invalid config - apply legacy environment flags
@@ -4338,12 +4338,12 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
  */
 async function runServer() {
   try {// Initialize feature flags from command line arguments
-    const flags = initFeatureFlags();
+    const flags = initGitLabConfig();
 
     // Store the parsed feature flags in the module-level variable
     if (configPath && flags) {
       // Config file exists and is valid
-      setFeatureFlags(flags);
+      setGitLabConfig(flags);
 
       // Show warning about legacy flags being ignored
       if (hasLegacyFlags(USE_GITLAB_WIKI, USE_MILESTONE, USE_PIPELINE, GITLAB_READ_ONLY_MODE)) {

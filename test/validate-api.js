@@ -2,9 +2,10 @@
 
 // Simple API validation script for PR testing
 import fetch from "node-fetch";
+import { getApiUrl, getApiToken } from '../config.js';
 
-const GITLAB_API_URL = process.env.GITLAB_API_URL || "https://gitlab.com";
-const GITLAB_TOKEN = process.env.GITLAB_TOKEN_TEST || process.env.GITLAB_TOKEN;
+const GITLAB_API_URL = getApiUrl() || "https://gitlab.com";
+const GITLAB_TOKEN = getApiToken() || process.env.GITLAB_TOKEN_TEST || process.env.GITLAB_TOKEN;
 const TEST_PROJECT_ID = process.env.TEST_PROJECT_ID;
 
 async function validateGitLabAPI() {
