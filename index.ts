@@ -3,6 +3,7 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { FeatureFlags, featureFlags, configPath, initFeatureFlags, hasLegacyFlags, setFeatureFlags } from './feature-flags.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import nodeFetch from "node-fetch";
 import fetchCookie from "fetch-cookie";
@@ -258,15 +259,15 @@ httpAgent = httpAgent || new Agent();
 // Create cookie jar with clean Netscape file parsing
 const createCookieJar = (): CookieJar | null => {
   if (!GITLAB_AUTH_COOKIE_PATH) return null;
-  
+
   try {
     const cookiePath = GITLAB_AUTH_COOKIE_PATH.startsWith("~/")
       ? path.join(process.env.HOME || "", GITLAB_AUTH_COOKIE_PATH.slice(2))
       : GITLAB_AUTH_COOKIE_PATH;
-    
+
     const jar = new CookieJar();
     const cookieContent = fs.readFileSync(cookiePath, "utf8");
-    
+
     cookieContent.split("\n").forEach(line => {
       // Handle #HttpOnly_ prefix
       if (line.startsWith("#HttpOnly_")) {
@@ -276,15 +277,15 @@ const createCookieJar = (): CookieJar | null => {
       if (line.startsWith("#") || !line.trim()) {
         return;
       }
-      
+
       // Parse Netscape format: domain, flag, path, secure, expires, name, value
       const parts = line.split("\t");
       if (parts.length >= 7) {
         const [domain, , path, secure, expires, name, value] = parts;
-        
+
         // Build cookie string in standard format
         const cookieStr = `${name}=${value}; Domain=${domain}; Path=${path}${secure === "TRUE" ? "; Secure" : ""}${expires !== "0" ? `; Expires=${new Date(parseInt(expires) * 1000).toUTCString()}` : ""}`;
-        
+
         // Use tough-cookie's parse function for robust parsing
         const cookie = parseCookie(cookieStr);
         if (cookie) {
@@ -293,7 +294,7 @@ const createCookieJar = (): CookieJar | null => {
         }
       }
     });
-    
+
     return jar;
   } catch (error) {
     console.error("Error loading cookie file:", error);
@@ -308,17 +309,17 @@ const fetch = cookieJar ? fetchCookie(nodeFetch, cookieJar) : nodeFetch;
 // Ensure session is established for the current request
 async function ensureSessionForRequest(): Promise<void> {
   if (!cookieJar || !GITLAB_AUTH_COOKIE_PATH) return;
-  
+
   // Extract the base URL from GITLAB_API_URL
   const apiUrl = new URL(GITLAB_API_URL);
   const baseUrl = `${apiUrl.protocol}//${apiUrl.hostname}`;
-  
+
   // Check if we already have GitLab session cookies
   const gitlabCookies = cookieJar.getCookiesSync(baseUrl);
-  const hasSessionCookie = gitlabCookies.some(cookie => 
+  const hasSessionCookie = gitlabCookies.some(cookie =>
     cookie.key === '_gitlab_session' || cookie.key === 'remember_user_token'
   );
-  
+
   if (!hasSessionCookie) {
     try {
       // Establish session with a lightweight request
@@ -328,7 +329,7 @@ async function ensureSessionForRequest(): Promise<void> {
       }).catch(() => {
         // Ignore errors - the important thing is that cookies get set during redirects
       });
-      
+
       // Small delay to ensure cookies are fully processed
       await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
@@ -2820,33 +2821,33 @@ async function getPipelineJobOutput(projectId: string, jobId: number, limit?: nu
 
   await handleGitLabError(response);
   const fullTrace = await response.text();
-  
+
   // Apply client-side pagination to limit context window usage
   if (limit !== undefined || offset !== undefined) {
     const lines = fullTrace.split('\n');
     const startOffset = offset || 0;
     const maxLines = limit || 1000;
-    
+
     // Return lines from the end, skipping offset lines and limiting to maxLines
     const startIndex = Math.max(0, lines.length - startOffset - maxLines);
     const endIndex = lines.length - startOffset;
-    
+
     const selectedLines = lines.slice(startIndex, endIndex);
     const result = selectedLines.join('\n');
-    
+
     // Add metadata about truncation
     if (startIndex > 0 || endIndex < lines.length) {
       const totalLines = lines.length;
       const shownLines = selectedLines.length;
       const skippedFromStart = startIndex;
       const skippedFromEnd = startOffset;
-      
+
       return `[Log truncated: showing ${shownLines} of ${totalLines} lines, skipped ${skippedFromStart} from start, ${skippedFromEnd} from end]\n\n${result}`;
     }
-    
+
     return result;
   }
-  
+
   return fullTrace;
 }
 
@@ -3398,7 +3399,7 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
     if (!request.params.arguments) {
       throw new Error("Arguments are required");
     }
-    
+
     // Ensure session is established for every request if cookie authentication is enabled
     if (GITLAB_AUTH_COOKIE_PATH) {
       await ensureSessionForRequest();
@@ -4313,12 +4314,22 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
  * 서버 초기화 및 실행
  */
 async function runServer() {
-  try {
-    // Server startup banner removed - inappropriate use of console.error for logging
-    // Server version banner removed - inappropriate use of console.error for logging
-    // API URL banner removed - inappropriate use of console.error for logging
-    // Server startup banner removed - inappropriate use of console.error for logging
-    if (!SSE) {
+  try {// Initialize feature flags from command line arguments
+       const flags = initFeatureFlags();
+
+       // Store the parsed feature flags in the module-level variable
+       if (configPath && flags) {
+         // Config file exists and is valid
+         setFeatureFlags(flags);
+
+         // Show warning about legacy flags being ignored
+         if (hasLegacyFlags(USE_GITLAB_WIKI, USE_MILESTONE, USE_PIPELINE, GITLAB_READ_ONLY_MODE)) {
+           console.warn('Warning: Legacy environment feature flags (USE_GITLAB_WIKI, USE_MILESTONE, USE_PIPELINE, GITLAB_READ_ONLY_MODE) will be ignored in favor of config file settings.');
+         }
+       }
+
+       // Rest of the existing function...
+       if (!SSE) {
       const transport = new StdioServerTransport();
       await server.connect(transport);
     } else {
