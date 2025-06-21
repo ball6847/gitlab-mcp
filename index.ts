@@ -3357,22 +3357,46 @@ async function getCommitDiff(
 }
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  // Apply read-only filter first
-  const tools0 = GITLAB_READ_ONLY_MODE
-    ? allTools.filter(tool => readOnlyTools.includes(tool.name))
-    : allTools;
-  // Toggle wiki tools by USE_GITLAB_WIKI flag
-  const tools1 = USE_GITLAB_WIKI
-    ? tools0
-    : tools0.filter(tool => !wikiToolNames.includes(tool.name));
-  // Toggle milestone tools by USE_MILESTONE flag
-  const tools2 = USE_MILESTONE
-    ? tools1
-    : tools1.filter(tool => !milestoneToolNames.includes(tool.name));
-  // Toggle pipeline tools by USE_PIPELINE flag
-  let tools = USE_PIPELINE ? tools2 : tools2.filter(tool => !pipelineToolNames.includes(tool.name));
+  let tools = [...allTools]; // Create a copy of allTools
+  
+  // Check if we have a valid configuration from file
+  if (configPath && featureFlags) {
+    // Config file exists and is valid - apply its rules
+    const hasEnabled = featureFlags?.enabled && Array.isArray(featureFlags.enabled) && featureFlags.enabled.length > 0;
+    const hasDisabled = featureFlags?.disabled && Array.isArray(featureFlags.disabled) && featureFlags.disabled.length > 0;
+    
+    if (hasEnabled) {
+      // Only include tools that are explicitly enabled
+      tools = tools.filter(tool => featureFlags!.enabled!.includes(tool.name));
+    } else if (hasDisabled) {
+      // Exclude tools that are explicitly disabled
+      tools = tools.filter(tool => !featureFlags!.disabled!.includes(tool.name));
+    }
+  } else {
+    // No config file or invalid config - apply legacy environment flags
+    
+    // Apply read-only filter first
+    tools = GITLAB_READ_ONLY_MODE
+      ? tools.filter(tool => readOnlyTools.includes(tool.name))
+      : tools;
+    
+    // Toggle wiki tools by USE_GITLAB_WIKI flag
+    tools = USE_GITLAB_WIKI
+      ? tools
+      : tools.filter(tool => !wikiToolNames.includes(tool.name));
+    
+    // Toggle milestone tools by USE_MILESTONE flag
+    tools = USE_MILESTONE
+      ? tools
+      : tools.filter(tool => !milestoneToolNames.includes(tool.name));
+    
+    // Toggle pipeline tools by USE_PIPELINE flag
+    tools = USE_PIPELINE 
+      ? tools 
+      : tools.filter(tool => !pipelineToolNames.includes(tool.name));
+  }
 
-  // <<< START: Gemini 호환성을 위해 $schema 제거 >>>
+  // Continue with existing code for Gemini compatibility
   tools = tools.map(tool => {
     // inputSchema가 존재하고 객체인지 확인
     if (tool.inputSchema && typeof tool.inputSchema === "object" && tool.inputSchema !== null) {
@@ -3387,7 +3411,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     // 변경이 필요 없으면 그대로 반환
     return tool;
   });
-  // <<< END: Gemini 호환성을 위해 $schema 제거 >>>
 
   return {
     tools, // $schema가 제거된 도구 목록 반환
