@@ -13,12 +13,18 @@ export interface FeatureFlags {
 export let configPath: string | null = null;
 export let featureFlags: FeatureFlags | null = null;
 
-// Set feature flags
+/**
+ * Sets the feature flags configuration
+ * @param flags - The feature flags configuration object
+ */
 export function setFeatureFlags(flags: FeatureFlags): void {
   featureFlags = flags;
 }
 
-// Parse command-line arguments for config path
+/**
+ * Parses command-line arguments to find the config file path
+ * @returns The resolved config file path or null if not found
+ */
 export function parseConfigPath(): string | null {
   const args = process.argv.slice(2);
   let configFilePath: string | null = null;
@@ -41,7 +47,14 @@ export function parseConfigPath(): string | null {
   return configFilePath;
 }
 
-// Check for legacy environment flags
+/**
+ * Checks if any legacy environment flags are defined
+ * @param USE_GITLAB_WIKI - Legacy GitLab wiki flag
+ * @param USE_MILESTONE - Legacy milestone flag
+ * @param USE_PIPELINE - Legacy pipeline flag
+ * @param GITLAB_READ_ONLY_MODE - Legacy read-only mode flag
+ * @returns True if any legacy flags are defined, false otherwise
+ */
 export function hasLegacyFlags(
   USE_GITLAB_WIKI?: boolean,
   USE_MILESTONE?: boolean,
@@ -56,7 +69,10 @@ export function hasLegacyFlags(
   );
 }
 
-// Initialize feature flags from arguments
+/**
+ * Initializes feature flags from command line arguments
+ * @returns Feature flags configuration object or null if not found
+ */
 export function initFeatureFlags(): FeatureFlags | null {
   configPath = parseConfigPath();
 
@@ -67,7 +83,11 @@ export function initFeatureFlags(): FeatureFlags | null {
   return null;
 }
 
-// Reads and validates feature flags from YAML config file
+/**
+ * Reads and validates feature flags from a YAML config file
+ * @param configFilePath - Path to the YAML config file
+ * @returns Feature flags configuration object or null if invalid
+ */
 export function readFeatureFlags(configFilePath: string): FeatureFlags | null {
   if (!fs.existsSync(configFilePath)) {
     console.warn(`Warning: Config file "${configFilePath}" not found. Enabling all features and applying legacy environment flags.`);
