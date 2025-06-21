@@ -212,6 +212,13 @@ const server = new Server(
   }
 );
 
+const flags = initGitLabConfig();
+
+// Store the parsed feature flags in the module-level variable
+if (configPath && flags) {
+  setGitLabConfig(flags);
+}
+
 const GITLAB_PERSONAL_ACCESS_TOKEN = getApiToken();
 const GITLAB_AUTH_COOKIE_PATH = process.env.GITLAB_AUTH_COOKIE_PATH;
 const IS_OLD = process.env.GITLAB_IS_OLD === "true";
@@ -4338,17 +4345,8 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
  */
 async function runServer() {
   try {// Initialize feature flags from command line arguments
-    const flags = initGitLabConfig();
-
-    // Store the parsed feature flags in the module-level variable
     if (configPath && flags) {
-      // Config file exists and is valid
       setGitLabConfig(flags);
-
-      // Show warning about legacy flags being ignored
-      if (hasLegacyFlags(USE_GITLAB_WIKI, USE_MILESTONE, USE_PIPELINE, GITLAB_READ_ONLY_MODE)) {
-        console.warn('Warning: Legacy environment feature flags (USE_GITLAB_WIKI, USE_MILESTONE, USE_PIPELINE, GITLAB_READ_ONLY_MODE) will be ignored in favor of config file settings.');
-      }
     }
 
     // Rest of the existing function...

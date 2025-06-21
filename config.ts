@@ -135,7 +135,7 @@ export function getApiUrl(): string | undefined {
  */
 export function getApiToken(): string | undefined {
   if (process.env.GITLAB_PERSONAL_ACCESS_TOKEN) {
-    return process.env.GITLAB_ACCESS_TOKEN;
+    return process.env.GITLAB_PERSONAL_ACCESS_TOKEN;
   }
   if (gitLabConfig?.api?.token) {
     return gitLabConfig.api.token;
