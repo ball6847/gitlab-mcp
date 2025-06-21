@@ -7,7 +7,7 @@
 # 1. If 'enabled' section is present and not empty, only those tools will be available
 # 2. If only 'disabled' section is present and not empty, all tools except those listed will be available
 # 3. If both sections are present, 'disabled' section will be ignored
-# 4. Legacy environment variables (USE_GITLAB_WIKI, USE_MILESTONE, USE_PIPELINE, GITLAB_READ_ONLY_MODE) 
+# 4. Legacy environment variables (USE_GITLAB_WIKI, USE_MILESTONE, USE_PIPELINE, GITLAB_READ_ONLY_MODE)
 #    will be ignored if a valid config file is provided
 
 # OPTION 1: Enable only specific tools
@@ -15,7 +15,7 @@
 enabled:
   - "get_file_contents"
   - "list_projects"
-  - "get_project" 
+  - "get_project"
   - "search_repositories"
   - "list_merge_requests"
   - "get_merge_request"

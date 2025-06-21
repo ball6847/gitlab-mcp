@@ -10,7 +10,7 @@ export interface FeatureFlags {
    * List of tool names to enable (only these tools will be available)
    */
   enabled?: string[];
-  
+
   /**
    * List of tool names to disable (all tools except these will be available)
    */
@@ -49,7 +49,7 @@ export function setFeatureFlags(flags: FeatureFlags): void {
 export function parseConfigPath(): string | null {
   const args = process.argv.slice(2);
   let configFilePath: string | null = null;
-  
+
   // Look for -c or --config flag
   for (let i = 0; i < args.length - 1; i++) {
     if (args[i] === '-c' || args[i] === '--config') {
@@ -57,17 +57,17 @@ export function parseConfigPath(): string | null {
       break;
     }
   }
-  
+
   // If no config path is specified, return null
   if (!configFilePath) {
     return null;
   }
-  
+
   // If config path is relative, make it absolute based on current working directory
   if (!path.isAbsolute(configFilePath)) {
     configFilePath = path.resolve(process.cwd(), configFilePath);
   }
-  
+
   return configFilePath;
 }
 
@@ -100,12 +100,12 @@ export function hasLegacyFlags(
 export function initFeatureFlags(): FeatureFlags | null {
   // Parse command line arguments
   configPath = parseConfigPath();
-  
+
   // If config path is specified, read and parse feature flags
   if (configPath) {
     return readFeatureFlags(configPath);
   }
-  
+
   return null;
 }
 
@@ -124,21 +124,21 @@ export function readFeatureFlags(configFilePath: string): FeatureFlags | null {
   try {
     // Read and parse YAML file
     const config = yaml.load(fs.readFileSync(configFilePath, 'utf8')) as FeatureFlags;
-    
+
     // Check if both sections are defined
     const hasEnabled = config.enabled && Array.isArray(config.enabled) && config.enabled.length > 0;
     const hasDisabled = config.disabled && Array.isArray(config.disabled) && config.disabled.length > 0;
-    
+
     if (hasEnabled && hasDisabled) {
       console.warn('Warning: Both "enabled" and "disabled" sections are defined in the config file. "disabled" section will be ignored.');
     }
-    
+
     // Check if no sections are defined
     if (!hasEnabled && !hasDisabled) {
       console.warn('Warning: Neither "enabled" nor "disabled" sections are properly defined in the config file. No filtering will be applied.');
       return null;
     }
-    
+
     return config;
   } catch (error) {
     console.warn(`Warning: Error parsing config file "${configFilePath}". Enabling all features and applying legacy environment flags.`, error);

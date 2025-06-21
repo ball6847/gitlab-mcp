@@ -3358,13 +3358,13 @@ async function getCommitDiff(
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   let tools = [...allTools]; // Create a copy of allTools
-  
+
   // Check if we have a valid configuration from file
   if (configPath && featureFlags) {
     // Config file exists and is valid - apply its rules
     const hasEnabled = featureFlags?.enabled && Array.isArray(featureFlags.enabled) && featureFlags.enabled.length > 0;
     const hasDisabled = featureFlags?.disabled && Array.isArray(featureFlags.disabled) && featureFlags.disabled.length > 0;
-    
+
     if (hasEnabled) {
       // Only include tools that are explicitly enabled
       tools = tools.filter(tool => featureFlags!.enabled!.includes(tool.name));
@@ -3374,25 +3374,25 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     }
   } else {
     // No config file or invalid config - apply legacy environment flags
-    
+
     // Apply read-only filter first
     tools = GITLAB_READ_ONLY_MODE
       ? tools.filter(tool => readOnlyTools.includes(tool.name))
       : tools;
-    
+
     // Toggle wiki tools by USE_GITLAB_WIKI flag
     tools = USE_GITLAB_WIKI
       ? tools
       : tools.filter(tool => !wikiToolNames.includes(tool.name));
-    
+
     // Toggle milestone tools by USE_MILESTONE flag
     tools = USE_MILESTONE
       ? tools
       : tools.filter(tool => !milestoneToolNames.includes(tool.name));
-    
+
     // Toggle pipeline tools by USE_PIPELINE flag
-    tools = USE_PIPELINE 
-      ? tools 
+    tools = USE_PIPELINE
+      ? tools
       : tools.filter(tool => !pipelineToolNames.includes(tool.name));
   }
 
@@ -4338,21 +4338,21 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
  */
 async function runServer() {
   try {// Initialize feature flags from command line arguments
-       const flags = initFeatureFlags();
+    const flags = initFeatureFlags();
 
-       // Store the parsed feature flags in the module-level variable
-       if (configPath && flags) {
-         // Config file exists and is valid
-         setFeatureFlags(flags);
+    // Store the parsed feature flags in the module-level variable
+    if (configPath && flags) {
+      // Config file exists and is valid
+      setFeatureFlags(flags);
 
-         // Show warning about legacy flags being ignored
-         if (hasLegacyFlags(USE_GITLAB_WIKI, USE_MILESTONE, USE_PIPELINE, GITLAB_READ_ONLY_MODE)) {
-           console.warn('Warning: Legacy environment feature flags (USE_GITLAB_WIKI, USE_MILESTONE, USE_PIPELINE, GITLAB_READ_ONLY_MODE) will be ignored in favor of config file settings.');
-         }
-       }
+      // Show warning about legacy flags being ignored
+      if (hasLegacyFlags(USE_GITLAB_WIKI, USE_MILESTONE, USE_PIPELINE, GITLAB_READ_ONLY_MODE)) {
+        console.warn('Warning: Legacy environment feature flags (USE_GITLAB_WIKI, USE_MILESTONE, USE_PIPELINE, GITLAB_READ_ONLY_MODE) will be ignored in favor of config file settings.');
+      }
+    }
 
-       // Rest of the existing function...
-       if (!SSE) {
+    // Rest of the existing function...
+    if (!SSE) {
       const transport = new StdioServerTransport();
       await server.connect(transport);
     } else {
