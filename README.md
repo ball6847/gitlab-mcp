@@ -146,6 +146,52 @@ $ sh scripts/image_push.sh docker_user_name
 - `USE_PIPELINE`: When set to 'true', enables the pipeline-related tools (list_pipelines, get_pipeline, list_pipeline_jobs, get_pipeline_job, get_pipeline_job_output, create_pipeline, retry_pipeline, cancel_pipeline). By default, pipeline features are disabled.
 - `GITLAB_AUTH_COOKIE_PATH`: Path to an authentication cookie file for GitLab instances that require cookie-based authentication. When provided, the cookie will be included in all GitLab API requests.
 
+## Feature Flags
+
+The gitlab-mcp server supports feature flags to control which tools are exposed to the MCP. This can help reduce quota usage by exposing only the tools you need.
+
+### Configuration File
+
+Feature flags are configured using a YAML file with the following format:
+
+```yaml
+# Enable only specific tools
+enabled:
+  - "get_file_contents"
+  - "list_projects"
+  - "get_project"
+  # ... more tools
+
+# OR disable specific tools
+disabled:
+  - "create_pipeline"
+  - "retry_pipeline"
+  - "cancel_pipeline"
+  # ... more tools
+```
+
+### Usage Rules
+
+1. If the `enabled` section is present and not empty, only those tools will be available
+2. If only the `disabled` section is present and not empty, all tools except those listed will be available
+3. If both sections are present, the `disabled` section will be ignored with a warning
+4. Legacy environment variables (`USE_GITLAB_WIKI`, `USE_MILESTONE`, `USE_PIPELINE`, `GITLAB_READ_ONLY_MODE`) will be ignored if a valid config file is provided
+
+### Command-Line Arguments
+
+To use a feature flags configuration file, start the server with:
+
+```bash
+node index.js -c config.yaml
+```
+
+- The `-c` or `--config` flag specifies the path to the configuration file
+- If the specified file cannot be found or parsed, a warning will be displayed and all features will be enabled (subject to legacy environment flags)
+
+### Example
+
+A sample configuration file is provided in `config.example.yaml`. Copy this file to `config.yaml` and modify it to suit your needs.
+
 [![Star History Chart](https://api.star-history.com/svg?repos=zereight/gitlab-mcp&type=Date)](https://www.star-history.com/#zereight/gitlab-mcp&Date)
 
 ## Tools 🛠️

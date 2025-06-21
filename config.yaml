@@ -1,0 +1,33 @@
+# Example configuration file for gitlab-mcp feature flags
+#
+# USAGE:
+# Start the server with: node index.js -c config.yaml
+#
+# RULES:
+# 1. If 'enabled' section is present and not empty, only those tools will be available
+# 2. If only 'disabled' section is present and not empty, all tools except those listed will be available
+# 3. If both sections are present, 'disabled' section will be ignored
+# 4. Legacy environment variables (USE_GITLAB_WIKI, USE_MILESTONE, USE_PIPELINE, GITLAB_READ_ONLY_MODE) 
+#    will be ignored if a valid config file is provided
+
+# OPTION 1: Enable only specific tools
+# Uncomment and modify the following section to enable only specific tools
+enabled:
+  - "get_file_contents"
+  - "list_projects"
+  - "get_project" 
+  - "search_repositories"
+  - "list_merge_requests"
+  - "get_merge_request"
+
+# OPTION 2: Disable specific tools
+# Uncomment and modify the following section to disable specific tools
+# disabled:
+#   - "create_pipeline"
+#   - "retry_pipeline"
+#   - "cancel_pipeline"
+#   - "create_milestone"
+#   - "edit_milestone"
+#   - "delete_milestone"
+
+# NOTE: Use exactly one option. If both sections are uncommented, only 'enabled' will be applied.
