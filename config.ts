@@ -1,7 +1,8 @@
 // Import required modules
 import fs from 'fs';
-import path from 'path';
 import yaml from 'js-yaml';
+import os from 'os';
+import path from 'path';
 
 // Interface for feature flags configuration
 export interface GitLabConfig {
@@ -42,6 +43,11 @@ export function parseConfigPath(): string | null {
 
   if (!configFilePath) {
     return null;
+  }
+
+  // Expand ~ to home directory
+  if (configFilePath.startsWith('~')) {
+    configFilePath = path.join(os.homedir(), configFilePath.slice(1));
   }
 
   if (!path.isAbsolute(configFilePath)) {
@@ -88,32 +94,32 @@ export function initGitLabConfig(): GitLabConfig | null {
 }
 
 export function readConfig(configFilePath: string): GitLabConfig | null {
-    if (!fs.existsSync(configFilePath)) {
-      console.warn(`Warning: Config file "${configFilePath}" not found. Enabling all features and applying legacy environment flags.`);
-      return null;
-    }
-
-    try {
-      const config = yaml.load(fs.readFileSync(configFilePath, 'utf8')) as GitLabConfig;
-
-      const hasEnabled = config.enabled && Array.isArray(config.enabled) && config.enabled.length > 0;
-      const hasDisabled = config.disabled && Array.isArray(config.disabled) && config.disabled.length > 0;
-
-      if (hasEnabled && hasDisabled) {
-        console.warn('Warning: Both "enabled" and "disabled" sections are defined in the config file. "disabled" section will be ignored.');
-      }
-
-      if (!hasEnabled && !hasDisabled) {
-        console.warn('Warning: Neither "enabled" nor "disabled" sections are properly defined in the config file. No filtering will be applied.');
-        return null;
-      }
-
-      return config;
-    } catch (error) {
-      console.warn(`Warning: Error parsing config file "${configFilePath}". Enabling all features and applying legacy environment flags.`, error);
-      return null;
-    }
+  if (!fs.existsSync(configFilePath)) {
+    console.warn(`Warning: Config file "${configFilePath}" not found. Enabling all features and applying legacy environment flags.`);
+    return null;
   }
+
+  try {
+    const config = yaml.load(fs.readFileSync(configFilePath, 'utf8')) as GitLabConfig;
+
+    const hasEnabled = config.enabled && Array.isArray(config.enabled) && config.enabled.length > 0;
+    const hasDisabled = config.disabled && Array.isArray(config.disabled) && config.disabled.length > 0;
+
+    if (hasEnabled && hasDisabled) {
+      console.warn('Warning: Both "enabled" and "disabled" sections are defined in the config file. "disabled" section will be ignored.');
+    }
+
+    if (!hasEnabled && !hasDisabled) {
+      console.warn('Warning: Neither "enabled" nor "disabled" sections are properly defined in the config file. No filtering will be applied.');
+      return null;
+    }
+
+    return config;
+  } catch (error) {
+    console.warn(`Warning: Error parsing config file "${configFilePath}". Enabling all features and applying legacy environment flags.`, error);
+    return null;
+  }
+}
 
 /**
  * Retrieves the GitLab API URL with precedence: environment variable > config file.
